@@ -1,113 +1,198 @@
-// import 'package:flutter/material.dart';
-
-// void main() {
-//   runApp(const LeSensoriumApp());
-// }
-
-// class LeSensoriumApp extends StatelessWidget {
-//   const LeSensoriumApp({Key? key}) : super(key: key);
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return MaterialApp(
-//       title: 'Le Sensorium',
-//       theme: ThemeData(
-//         primarySwatch: Colors.green,
-//       ),
-//       home: const HomePage(),
-//     );
-//   }
-// }
-
-// class HomePage extends StatelessWidget {
-//   const HomePage({Key? key}) : super(key: key);
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: const Text('Le Sensorium'),
-//       ),
-//       body: const Center(
-//         child: Text(
-//           'Bienvenue dans Le Sensorium',
-//           style: TextStyle(fontSize: 24),
-//         ),
-//       ),
-//     );
-//   }
-// }
-
-
 import 'package:flutter/material.dart';
-import 'package:webview_flutter/webview_flutter.dart';
-import 'package:webview_flutter_android/webview_flutter_android.dart';
-import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 void main() {
-  runApp(const LeSensoriumApp());
+  runApp(const MyApp());
 }
 
-class LeSensoriumApp extends StatelessWidget {
-  const LeSensoriumApp({Key? key}) : super(key: key);
+class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Le Sensorium',
       theme: ThemeData(
-        primarySwatch: Colors.green,
+        primarySwatch: Colors.blue,
       ),
-      home: const SoundCloudPlayer(),
+      home: const AudioPlayerScreen(),
     );
   }
 }
 
-class SoundCloudPlayer extends StatefulWidget {
-  const SoundCloudPlayer({Key? key}) : super(key: key);
+class AudioPlayerScreen extends StatefulWidget {
+  const AudioPlayerScreen({Key? key}) : super(key: key);
 
   @override
-  _SoundCloudPlayerState createState() => _SoundCloudPlayerState();
+  _AudioPlayerScreenState createState() => _AudioPlayerScreenState();
 }
 
-class _SoundCloudPlayerState extends State<SoundCloudPlayer> {
-  late WebViewController _controller;
+class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  bool isPlaying = false;
+  Duration totalDuration = Duration.zero;
+  Duration currentPosition = Duration.zero;
+
+  final String audioUrl = 'https://res.cloudinary.com/dafzso0rh/video/upload/v1728925409/Extrait_Priv%C3%A9_-_1er_Chapitre___La_Que%CC%82te_Du_Cristal_De_Gue%CC%81rison___Prote%CC%81ge%CC%81_Par_MusicStart_SACEM_iczjbk.mp3';
 
   @override
   void initState() {
     super.initState();
+    _initAudioPlayer();
+  }
 
-    // Configurer WebView selon la plateforme
-    late final PlatformWebViewControllerCreationParams params;
-    if (WebViewPlatform.instance is WebKitWebViewPlatform) {
-      params = WebKitWebViewControllerCreationParams(
-        allowsInlineMediaPlayback: true,
-        mediaTypesRequiringUserAction: const <PlaybackMediaTypes>{},
-      );
+  void _initAudioPlayer() async {
+    _audioPlayer.onDurationChanged.listen((duration) {
+      setState(() {
+        totalDuration = duration;
+      });
+    });
+
+    _audioPlayer.onPositionChanged.listen((position) {
+      setState(() {
+        currentPosition = position;
+      });
+    });
+  }
+
+  void _togglePlayPause() async {
+    if (isPlaying) {
+      await _audioPlayer.pause();
     } else {
-      params = const PlatformWebViewControllerCreationParams();
+      await _audioPlayer.play(UrlSource(audioUrl));
     }
+    setState(() {
+      isPlaying = !isPlaying;
+    });
+  }
 
-    final WebViewController controller = WebViewController.fromPlatformCreationParams(params);
-    controller
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..loadRequest(Uri.parse('https://soundcloud.com/le-sensorium/extrait-1er-chapitre-la-quete-du-cristal-de-guerison/s-2dMsvQRzV9o?si=9e4177bed99e4b939991c3fa1c1af9c7&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing'));
+  void _seekToPosition(double value) {
+    final position = Duration(milliseconds: (value * totalDuration.inMilliseconds).toInt());
+    _audioPlayer.seek(position);
+  }
 
-    _controller = controller;
-
-    if (controller.platform is AndroidWebViewController) {
-      AndroidWebViewController.enableDebugging(true);
-      (controller.platform as AndroidWebViewController).setMediaPlaybackRequiresUserGesture(false);
-    }
+  @override
+  void dispose() {
+    _audioPlayer.dispose(); // Assurez-vous de libérer les ressources
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Le Sensorium - Lecture audio'),
+        title: const Text('MP3 Player'),
       ),
-      body: WebViewWidget(controller: _controller),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton(
+              onPressed: _togglePlayPause,
+              child: Text(isPlaying ? 'Pause' : 'Play'),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Total Duration: ${totalDuration.inMinutes}:${(totalDuration.inSeconds % 60).toString().padLeft(2, '0')}',
+              style: const TextStyle(fontSize: 16),
+            ),
+            Text(
+              'Current Position: ${currentPosition.inMinutes}:${(currentPosition.inSeconds % 60).toString().padLeft(2, '0')}',
+              style: const TextStyle(fontSize: 16),
+            ),
+            Slider(
+              value: totalDuration.inSeconds > 0 ? currentPosition.inSeconds.toDouble() : 0.0,
+              min: 0.0,
+              max: totalDuration.inSeconds.toDouble(),
+              onChanged: (value) {
+                setState(() {
+                  _seekToPosition(value);
+                });
+              },
+              onChangeEnd: (value) {
+                _seekToPosition(value);
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
+
+
+
+
+
+
+
+
+
+// import 'package:flutter/material.dart';
+// import 'package:audioplayers/audioplayers.dart';
+
+// void main() {
+//   runApp(const MyApp());
+// }
+
+// class MyApp extends StatelessWidget {
+//   const MyApp({Key? key}) : super(key: key);
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return MaterialApp(
+//       title: 'MP3 Player',
+//       theme: ThemeData(
+//         primarySwatch: Colors.blue,
+//       ),
+//       home: const AudioPlayerScreen(),
+//     );
+//   }
+// }
+
+// class AudioPlayerScreen extends StatefulWidget {
+//   const AudioPlayerScreen({Key? key}) : super(key: key);
+
+//   @override
+//   _AudioPlayerScreenState createState() => _AudioPlayerScreenState();
+// }
+
+// class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
+//   final AudioPlayer _audioPlayer = AudioPlayer();
+//   bool isPlaying = false;
+
+// //compte d'henri ferry
+//   final String audioUrl = 'https://res.cloudinary.com/dafzso0rh/video/upload/v1728925409/Extrait_Priv%C3%A9_-_1er_Chapitre___La_Que%CC%82te_Du_Cristal_De_Gue%CC%81rison___Prote%CC%81ge%CC%81_Par_MusicStart_SACEM_iczjbk.mp3';
+
+//   void _togglePlayPause() async {
+//     if (isPlaying) {
+//       await _audioPlayer.pause();
+//     } else {
+//       await _audioPlayer.play(UrlSource(audioUrl));
+//     }
+//     setState(() {
+//       isPlaying = !isPlaying;
+//     });
+//   }
+
+//   @override
+//   void dispose() {
+//     _audioPlayer.dispose(); // Assurez-vous de libérer les ressources
+//     super.dispose();
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: const Text('MP3 Player'),
+//       ),
+//       body: Center(
+//         child: ElevatedButton(
+//           onPressed: _togglePlayPause,
+//           child: Text(isPlaying ? 'Pause' : 'Play'),
+//         ),
+//       ),
+//     );
+//   }
+// }
