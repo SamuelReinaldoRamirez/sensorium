@@ -1,7 +1,83 @@
+// plugins {
+//     id "com.android.application"
+//     id "kotlin-android"
+//     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+//     id "dev.flutter.flutter-gradle-plugin"
+// }
+
+// def localProperties = new Properties()
+// def localPropertiesFile = rootProject.file("local.properties")
+// if (localPropertiesFile.exists()) {
+//     localPropertiesFile.withReader("UTF-8") { reader ->
+//         localProperties.load(reader)
+//     }
+// }
+
+// def flutterVersionCode = localProperties.getProperty("flutter.versionCode")
+// if (flutterVersionCode == null) {
+//     flutterVersionCode = "1"
+// }
+
+// def flutterVersionName = localProperties.getProperty("flutter.versionName")
+// if (flutterVersionName == null) {
+//     flutterVersionName = "1.0"
+// }
+
+// android {
+//     compileSdkVersion 31 // or higher
+//     namespace = "com.example.le_sensorium"
+//     compileSdk = flutter.compileSdkVersion
+//     ndkVersion = flutter.ndkVersion
+
+//     compileOptions {
+//         sourceCompatibility = JavaVersion.VERSION_1_8
+//         targetCompatibility = JavaVersion.VERSION_1_8
+//     }
+
+//     defaultConfig {
+//         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+//         applicationId = "com.example.le_sensorium"
+//         // You can update the following values to match your application needs.
+//         // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
+//         minSdk = flutter.minSdkVersion
+//         targetSdk = flutter.targetSdkVersion
+//         versionCode = flutterVersionCode.toInteger()
+//         versionName = flutterVersionName
+//         targetSdkVersion 31 // or higher
+//     }
+
+//     buildTypes {
+//         release {
+//             // TODO: Add your own signing config for the release build.
+//             // Signing with the debug keys for now, so `flutter run --release` works.
+//             signingConfig = signingConfigs.debug
+//         }
+//     }
+
+//      kotlinOptions {
+//         jvmTarget = "1.8"
+//         // jvmTarget = "1.6"
+//     }
+
+// }
+
+// dependencies {
+//     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version" // Utilisez la version définie dans le fichier racine
+//     // implementation "androidx.fragment:fragment:1.8.1" // Mettez à jour avec la dernière version
+//     implementation "androidx.fragment:fragment:1.8.0" // Mettez à jour avec la dernière version
+//     implementation "androidx.lifecycle:lifecycle-livedata:2.7.0"
+//     implementation "androidx.lifecycle:lifecycle-viewmodel:2.7.0"
+//     // Vos autres dépendances ici
+// }
+
+// flutter {
+//     source = "../.."
+// }
+
+
 plugins {
     id "com.android.application"
     id "kotlin-android"
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id "dev.flutter.flutter-gradle-plugin"
 }
 
@@ -13,17 +89,11 @@ if (localPropertiesFile.exists()) {
     }
 }
 
-def flutterVersionCode = localProperties.getProperty("flutter.versionCode")
-if (flutterVersionCode == null) {
-    flutterVersionCode = "1"
-}
-
-def flutterVersionName = localProperties.getProperty("flutter.versionName")
-if (flutterVersionName == null) {
-    flutterVersionName = "1.0"
-}
+def flutterVersionCode = localProperties.getProperty("flutter.versionCode", "1")
+def flutterVersionName = localProperties.getProperty("flutter.versionName", "1.0")
 
 android {
+    compileSdkVersion 34
     namespace = "com.example.le_sensorium"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
@@ -34,25 +104,50 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.le_sensorium"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutterVersionCode.toInteger()
         versionName = flutterVersionName
+
+        minSdkVersion 21  // À ajuster selon les besoins de ton application
+        targetSdkVersion 34  // Assure-toi de cibler la dernière version
+        versionCode 1
+        versionName "1.0"
     }
+
+    buildToolsVersion "34.0.0"  // Mets à jour la version de build tools
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.debug
         }
     }
+
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+
+    configurations.all {
+        resolutionStrategy {
+            force 'androidx.fragment:fragment:1.8.0'
+        }
+    }
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    implementation "androidx.fragment:fragment:1.8.0"
+    implementation "androidx.lifecycle:lifecycle-livedata:2.7.0"
+    implementation "androidx.lifecycle:lifecycle-viewmodel:2.7.0"
+
+    implementation 'androidx.core:core-ktx:1.12.0'    // Mets à jour androidx.core
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.2'
+    implementation 'androidx.appcompat:appcompat:1.6.1' // Version stable pour appcompat
+    implementation 'androidx.activity:activity-ktx:1.8.0'
 }
 
 flutter {
     source = "../.."
 }
+
